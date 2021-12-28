@@ -20,21 +20,15 @@ public:
 		constexpr int size_of_each_message_block_in_bytes{ size_of_each_message_block_in_bits / 8 };
 
 		// The size of the message in bits is put at the end of the final message_block.
-		// There are 64 bits reserved there, so according to the standards regarding
-		// SHA512 the largest message that SHA512 supports is of size 2^64-1 bits
-		constexpr auto max_size_of_sha512_message_in_bytes{ 0xffffffffffffffffULL / 8 };
-		if (len > max_size_of_sha512_message_in_bytes)
-		{
-			throw std::invalid_argument("Congratulations! You bypassed the length limit in the function \"calculate_sha512_hash\"");
-		}
+		// There are 128 bits reserved there, so according to the standards regarding
+		// SHA512, the largest message that SHA512 supports is of size 2^128-1 bits
+		// which I assume to never receive as part of this function.
 		std::array<std::uint64_t, 8> current_hash_values{ {
 			0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL, 0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
 			0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL, 0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL
 		} };
 		{
-			std::array<std::uint64_t, size_of_each_message_block_in_bits / 64> current_block{ {0} };
-
-			const std::uint64_t size_message_in_bits = static_cast<std::uint64_t>(len) * 8;
+			std::array<std::uint64_t, size_of_each_message_block_in_bits / 64> current_block;
 
 			{
 				bool terminating_bit_got_pushed_to_the_next_block = false;
@@ -61,14 +55,14 @@ public:
 					// in the current block.
 					else if (bytes_remaining < size_of_each_message_block_in_bytes)
 					{
-						const int index_in_current_block_of_terminating_1 = bytes_remaining / 8;
-						std::fill(current_block.begin() + index_in_current_block_of_terminating_1, current_block.end(), 0);
+						const int index_of_terminating_1_in_current_block = bytes_remaining / 8;
+						std::fill(current_block.begin() + index_of_terminating_1_in_current_block, current_block.end(), 0);
 						// Loading as big-endian
 						sha512::copy_arr_bytes_into_arr_64_bits(&message[index_in_message], bytes_remaining, current_block.data());
 						const int index_byte_in_64_bits = bytes_remaining % 8;
 						// Set the 1 terminating bit
-						current_block[index_in_current_block_of_terminating_1] |= static_cast<std::uint64_t>(1) << (63 - (index_byte_in_64_bits * 8));
-						index_of_terminating_1_in_64bit_arr = index_in_current_block_of_terminating_1;
+						current_block[index_of_terminating_1_in_current_block] |= static_cast<std::uint64_t>(1) << (63 - (index_byte_in_64_bits * 8));
+						index_of_terminating_1_in_64bit_arr = index_of_terminating_1_in_current_block;
 						terminating_bit_got_pushed_to_the_next_block = false;
 						break;
 					}
@@ -79,9 +73,10 @@ public:
 					std::fill(current_block.begin(), current_block.end(), 0);
 					current_block[0] = static_cast<std::uint64_t>(1) << 63;
 				}
-				// If the terminating 1 takes up the last 64-bit element in current_block,
-				// so the length is pushed to the next block
-				else if (index_of_terminating_1_in_64bit_arr == current_block.size() - 1)
+				// If the terminating 1 takes up one of the last two 64-bit elements in current_block,
+				// then the length is pushed to the next block. That's because there are 128 bits
+				// reserved for the length of the message in bits.
+				else if (index_of_terminating_1_in_64bit_arr >= static_cast<int>(current_block.size()) - 2)
 				{
 					sha512::SHA512_compress_message_block(current_block, current_hash_values);
 					std::fill(current_block.begin(), current_block.end(), 0);
@@ -90,7 +85,12 @@ public:
 			// The "std::uint64_t"s exist inside of "current_block" in the machine native form.
 			// That's why endianness is irrelevant here.
 			// boost::endian::conditional_reverse(len, boost::endian::order::native, boost::endian::order::big);
-			current_block[current_block.size() - 1] = size_message_in_bits;
+			static_assert(std::is_unsigned<decltype(len)>::value,
+				"I need the \"len\" variable to be unsigned because left-shifting a signed integer is undefined behaviour.");
+			constexpr int num_bits_in_len = std::numeric_limits<decltype(len)>::digits;
+			static_assert(num_bits_in_len <= 64, "Too many bits in std::size_t. We now need to change the code to account for that.");
+			current_block[current_block.size() - 1] = static_cast<std::uint64_t>(static_cast<std::uint64_t>(len) << 3 /*times 8, from bytes to bits*/);
+			current_block[current_block.size() - 2] = static_cast<std::uint64_t>(static_cast<std::uint64_t>(len) >> (64 - 3) /*The overflow bits from earlier*/);
 			sha512::SHA512_compress_message_block(current_block, current_hash_values);
 		}
 		// Finally, now that we have the hash values inside of
@@ -100,7 +100,7 @@ public:
 		// we'll convert the hash to bytes to avoid
 		// confusion over endianness.
 
-		std::array<std::uint8_t, return_hash_size_in_bytes> final_hash{ {0} };
+		std::array<std::uint8_t, return_hash_size_in_bytes> final_hash;
 
 		for (int index = 0; index < static_cast<int>(current_hash_values.size()); ++index)
 		{
@@ -167,7 +167,7 @@ private:
 		auto& load_big_or_little = boost::endian::load_big_u64;
 		if (num_bytes > 0)
 		{
-			std::array<std::uint8_t, 8> emergency_buffer{ {0} };
+			std::array<std::uint8_t, 8> emergency_buffer;
 			std::size_t index_byte = 0;
 			std::size_t index_arr = 0;
 			for (; ; index_byte += 8, ++index_arr)
@@ -192,7 +192,7 @@ private:
 	}
 	static void SHA512_compress_message_block(const std::array<std::uint64_t, 16>& message_block, std::array<std::uint64_t, 8>& parameter_hash_values)
 	{
-		std::array<std::uint64_t, 80> message_schedule{ {0} };
+		std::array<std::uint64_t, 80> message_schedule;
 
 		std::copy(message_block.begin(), message_block.end(), message_schedule.begin());
 		for (int word_index = 16; word_index < 80; ++word_index)
