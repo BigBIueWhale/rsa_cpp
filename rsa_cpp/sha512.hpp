@@ -1,5 +1,6 @@
-#include <type_traits>
+#include <cstddef>
 #include <cstdint>
+#include <type_traits>
 #include <array>
 
 class sha512
@@ -17,7 +18,7 @@ private:
 	{
 		static_assert(std::is_unsigned<x_T>::value, "Rotates unsigned integer by a specific number of bits");
 		static_assert(std::numeric_limits<x_T>::digits > amount, "Amount to shift needs to be smaller than number of bits in unsigned integer."
-			"Otherwise it\'s undefined behavior.");
+			" Otherwise it\'s undefined behavior.");
 		return (x >> amount) | (x << (64 - amount));
 	}
 

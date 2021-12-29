@@ -1,9 +1,8 @@
-#include <limits>
-#include <cstddef>
-#include <algorithm>
-#include <boost/endian/conversion.hpp>
-#include <stdexcept>
 #include "sha512.hpp"
+#include <limits>
+#include <algorithm>
+#include <stdexcept>
+#include <boost/endian/conversion.hpp>
 
 std::array<std::uint8_t, sha512::size_in_bytes> sha512::calculate_hash(const std::uint8_t* const message, const std::size_t len)
 {

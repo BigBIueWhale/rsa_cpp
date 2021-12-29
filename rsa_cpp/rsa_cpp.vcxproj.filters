@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="rsa.cpp">
+    <ClCompile Include="sha512.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="sha512.cpp">
+    <ClCompile Include="rsa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
