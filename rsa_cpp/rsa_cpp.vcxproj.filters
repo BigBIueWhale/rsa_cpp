@@ -18,6 +18,9 @@
     <ClCompile Include="rsa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="sha512.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sha512.hpp">
