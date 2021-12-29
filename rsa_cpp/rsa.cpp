@@ -7,7 +7,7 @@
 int main()
 {
 	constexpr const std::uint8_t message[] = "hello worldalskjdfhlkashdf;oie lasdjhf we fiauh lkuh aiuwe hviuahei aawe hadoi hweiqwe[qe[]qasdfasdfsdfdsffdshgga";
-	const std::array<std::uint8_t, 512 / 8> hash_bytes = sha512::calculate_sha512_hash(message, sizeof(message) - 1);
+	const std::array<std::uint8_t, 512 / 8> hash_bytes = sha512::calculate_hash(message, sizeof(message) - 1);
 	for (const std::uint8_t& byte_elem : hash_bytes)
 	{
 		std::ostringstream num_as_str;
