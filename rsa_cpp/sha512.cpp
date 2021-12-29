@@ -24,8 +24,10 @@ std::array<std::uint8_t, sha512::size_in_bytes> sha512::calculate_hash(const std
 		std::array<std::uint64_t, blocks_size_bits / 64> current_block;
 
 		{
-			//a bool for if the terminating bit got pushed to the next block
-			bool bit_pushed = false;
+			// A boolean for whether the terminating 1 bit got put in the
+			// current_block or whether there was not room and it got
+			// posponed to the next block.
+			bool bit_postponed = false;
 			int index_of_terminating_1_in_64bit_arr = 0;
 
 			std::size_t message_index = 0;
@@ -42,7 +44,7 @@ std::array<std::uint8_t, sha512::size_in_bytes> sha512::calculate_hash(const std
 				if (bytes_remaining == blocks_size_bytes)
 				{
 					// Didn't put in the last 1 bit
-					bit_pushed = true;
+					bit_postponed = true;
 					break;
 				}
 				// If it's not exactly 128 bits then there's room for the 1 terminating bit
@@ -58,12 +60,12 @@ std::array<std::uint8_t, sha512::size_in_bytes> sha512::calculate_hash(const std
 					// Set the 1 terminating bit
 					current_block[index_of_terminating_1_in_current_block] |= static_cast<std::uint64_t>(1) << (63 - (index_byte * 8));
 					index_of_terminating_1_in_64bit_arr = index_of_terminating_1_in_current_block;
-					bit_pushed = false;
+					bit_postponed = false;
 					break;
 				}
 			}
 
-			if (bit_pushed)
+			if (bit_postponed)
 			{
 				std::fill(current_block.begin(), current_block.end(), 0);
 				current_block[0] = static_cast<std::uint64_t>(1) << 63;
