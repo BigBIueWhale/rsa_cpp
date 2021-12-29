@@ -1,8 +1,8 @@
 #include "sha512.hpp"
 
-std::array<std::uint8_t, sha512::return_hash_size_in_bytes> sha512::calculate_sha512_hash(const std::uint8_t* const message, const std::size_t len)
+std::array<std::uint8_t, sha512::size_in_bits> sha512::calculate_sha512_hash(const std::uint8_t* const message, const std::size_t len)
 {
-	constexpr int size_of_each_message_block_in_bits{ return_hash_size_in_bits * 2 };
+	constexpr int size_of_each_message_block_in_bits{ size_in_bytes * 2 };
 
 	constexpr int size_of_each_message_block_in_bytes{ size_of_each_message_block_in_bits / 8 };
 
@@ -87,7 +87,7 @@ std::array<std::uint8_t, sha512::return_hash_size_in_bytes> sha512::calculate_sh
 	// we'll convert the hash to bytes to avoid
 	// confusion over endianness.
 
-	std::array<std::uint8_t, return_hash_size_in_bytes> final_hash;
+	std::array<std::uint8_t, size_in_bits> final_hash;
 
 	for (int index = 0; index < static_cast<int>(current_hash_values.size()); ++index)
 	{
