@@ -6,12 +6,12 @@
 class sha512
 {
 	//returns the hash size in bits
-	static constexpr int size_in_bits{ 512 };
+	static constexpr int hash_digest_size_in_bits{ 512 };
 	//returns the hash size in bytes
-	static constexpr int size_in_bytes{ size_in_bits / 8 };
+	static constexpr int hash_digest_size_in_bytes{ hash_digest_size_in_bits / 8 };
 public:
 //calculates the sha512 hash
-	static std::array<std::uint8_t, size_in_bytes> calculate_hash(const std::uint8_t* const message, const std::size_t len);
+	static std::array<std::uint8_t, hash_digest_size_in_bytes> calculate_hash(const std::uint8_t* const message, const std::size_t len);
 private:
 	template <typename x_T, int amount>
 	static x_T rotater(const x_T& x)

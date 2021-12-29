@@ -4,10 +4,10 @@
 #include <stdexcept>
 #include <boost/endian/conversion.hpp>
 
-std::array<std::uint8_t, sha512::size_in_bytes> sha512::calculate_hash(const std::uint8_t* const message, const std::size_t len)
+std::array<std::uint8_t, sha512::hash_digest_size_in_bytes> sha512::calculate_hash(const std::uint8_t* const message, const std::size_t len)
 {
 	//the size of each message block in bits
-	constexpr int blocks_size_bits{ size_in_bits * 2 };
+	constexpr int blocks_size_bits{ hash_digest_size_in_bits * 2 };
 
 	//the size of each message block in bytes
 	constexpr int blocks_size_bytes{ blocks_size_bits / 8 };
@@ -97,7 +97,7 @@ std::array<std::uint8_t, sha512::size_in_bytes> sha512::calculate_hash(const std
 	// we'll convert the hash to bytes to avoid
 	// confusion over endianness.
 
-	std::array<std::uint8_t, size_in_bytes> final_hash;
+	std::array<std::uint8_t, hash_digest_size_in_bytes> final_hash;
 
 	for (int index = 0; index < static_cast<int>(current_hash_values.size()); ++index)
 	{
