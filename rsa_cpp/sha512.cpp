@@ -4,24 +4,14 @@
 #include <stdexcept>
 #include <boost/endian/conversion.hpp>
 
-std::array<std::uint8_t, sha512::hash_digest_size_in_bytes> sha512::calculate_hash(const std::uint8_t* const message, const std::size_t len)
+// The size of the message in bits is put at the end of the final message_block.
+// There are 128 bits reserved there, so according to the standards regarding
+// SHA512, the largest message that SHA512 supports is of size 2^128-1 bits
+// which I assume to never receive as part of this function.
+
+void sha512::update(const std::uint8_t* const message, const std::size_t len)
 {
-	//the size of each message block in bits
-	constexpr int blocks_size_bits{ sha512::hash_digest_size_in_bits * 2 };
-
-	//the size of each message block in bytes
-	constexpr int blocks_size_bytes{ blocks_size_bits / 8 };
-
-	// The size of the message in bits is put at the end of the final message_block.
-	// There are 128 bits reserved there, so according to the standards regarding
-	// SHA512, the largest message that SHA512 supports is of size 2^128-1 bits
-	// which I assume to never receive as part of this function.
-	std::array<std::uint64_t, 8> current_hash_values{ {
-		0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL, 0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
-		0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL, 0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL
-	} };
 	{
-		std::array<std::uint64_t, blocks_size_bits / 64> current_block;
 
 		{
 			// A boolean for whether the terminating 1 bit got put in the
@@ -90,6 +80,12 @@ std::array<std::uint8_t, sha512::hash_digest_size_in_bytes> sha512::calculate_ha
 		current_block[current_block.size() - 2] = static_cast<std::uint64_t>(static_cast<std::uint64_t>(len) >> (64 - 3) /*The overflow bits from earlier*/);
 		sha512::SHA512_compress(current_block, current_hash_values);
 	}
+}
+
+sha512::digest_t sha512::digest() const
+{
+
+
 	// Finally, now that we have the hash values inside of
 	// "current_hash_values" as 64 bits big endian.
 	// It's big endian because we originally loaded the
@@ -97,7 +93,7 @@ std::array<std::uint8_t, sha512::hash_digest_size_in_bytes> sha512::calculate_ha
 	// we'll convert the hash to bytes to avoid
 	// confusion over endianness.
 
-	std::array<std::uint8_t, sha512::hash_digest_size_in_bytes> final_hash;
+	sha512::digest_t final_hash;
 
 	for (int index = 0; index < static_cast<int>(current_hash_values.size()); ++index)
 	{
@@ -105,10 +101,11 @@ std::array<std::uint8_t, sha512::hash_digest_size_in_bytes> sha512::calculate_ha
 	}
 	return final_hash;
 }
- void sha512::copy_arr_bytes_into_arr_64_bits(const std::uint8_t* const bytes, const std::size_t num_bytes, std::uint64_t* const arr64)
+
+// Loading the bytes into the std::uint64 as big endian because
+// that's the convention when dealing with SHA512
+ void sha512::copy_arr_bytes_into_arr_64_bits(const std::uint8_t* const bytes, const std::size_t num_bytes, std::uint64_t* const arr64, const int num_bytes_already_taken)
 {
-	// Loading the bytes into the std::uint64 as big endian because
-	// that's the convention when dealing with SHA512
 	auto& load_big_or_little = boost::endian::load_big_u64;
 	if (num_bytes > 0)
 	{
@@ -135,11 +132,11 @@ std::array<std::uint8_t, sha512::hash_digest_size_in_bytes> sha512::calculate_ha
 		}
 	}
 }
- void sha512::SHA512_compress(const std::array<std::uint64_t, 16>& message_block, std::array<std::uint64_t, 8>& parameter_hash_values)
+ void sha512::compress()
  {
 	 std::array<std::uint64_t, 80> message_schedule;
 
-	 std::copy(message_block.begin(), message_block.end(), message_schedule.begin());
+	 std::copy(this->m_message_block.begin(), this->m_message_block.end(), message_schedule.begin());
 	 for (int word_index = 16; word_index < 80; ++word_index)
 	 {
 		 message_schedule[word_index] =
@@ -167,14 +164,14 @@ std::array<std::uint8_t, sha512::hash_digest_size_in_bytes> sha512::calculate_ha
 		 0x113f9804bef90daeULL, 0x1b710b35131c471bULL, 0x28db77f523047d84ULL, 0x32caab7b40c72493ULL, 0x3c9ebe0a15c9bebcULL,
 		 0x431d67c49c100d4cULL, 0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL, 0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL
 	 };
-	 std::uint64_t a = parameter_hash_values[0];
-	 std::uint64_t b = parameter_hash_values[1];
-	 std::uint64_t c = parameter_hash_values[2];
-	 std::uint64_t d = parameter_hash_values[3];
-	 std::uint64_t e = parameter_hash_values[4];
-	 std::uint64_t f = parameter_hash_values[5];
-	 std::uint64_t g = parameter_hash_values[6];
-	 std::uint64_t h = parameter_hash_values[7];
+	 std::uint64_t a = this->m_hash_values[0];
+	 std::uint64_t b = this->m_hash_values[1];
+	 std::uint64_t c = this->m_hash_values[2];
+	 std::uint64_t d = this->m_hash_values[3];
+	 std::uint64_t e = this->m_hash_values[4];
+	 std::uint64_t f = this->m_hash_values[5];
+	 std::uint64_t g = this->m_hash_values[6];
+	 std::uint64_t h = this->m_hash_values[7];
 	 for (int word_index = 0; word_index < 80; ++word_index)
 	 {
 		 const std::uint64_t T1 = sha512::uppercase_sigma1(e) + sha512::choice(e, f, g) + h + constants[word_index] + message_schedule[word_index];
@@ -188,12 +185,12 @@ std::array<std::uint8_t, sha512::hash_digest_size_in_bytes> sha512::calculate_ha
 		 b = a;
 		 a = T1 + T2;
 	 }
-	 parameter_hash_values[0] += a;
-	 parameter_hash_values[1] += b;
-	 parameter_hash_values[2] += c;
-	 parameter_hash_values[3] += d;
-	 parameter_hash_values[4] += e;
-	 parameter_hash_values[5] += f;
-	 parameter_hash_values[6] += g;
-	 parameter_hash_values[7] += h;
+	 this->m_hash_values[0] += a;
+	 this->m_hash_values[1] += b;
+	 this->m_hash_values[2] += c;
+	 this->m_hash_values[3] += d;
+	 this->m_hash_values[4] += e;
+	 this->m_hash_values[5] += f;
+	 this->m_hash_values[6] += g;
+	 this->m_hash_values[7] += h;
  }
