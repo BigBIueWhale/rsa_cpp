@@ -11,6 +11,18 @@
 
 void sha512::update(const std::uint8_t* const message, const std::size_t len)
 {
+	if (message == nullptr)
+	{
+		throw std::invalid_argument("Error in function \"sha512::update\""
+			" \"message\" can\'t be nullptr");
+	}
+	if (len <= 0)
+	{
+		throw std::invalid_argument("Error in function \"sha512::update\"."
+			" \"len\" can\'t be 0");
+	}
+	// Times 8 to convert from bytes to bits
+	this->m_bits_counter += static_cast<decltype(this->m_bits_counter)>(len) << 3;
 	{
 
 		{
@@ -82,34 +94,159 @@ void sha512::update(const std::uint8_t* const message, const std::size_t len)
 	}
 }
 
+void sha512::zero_bytes(message_block_t& messsage_block, int index_byte_to_start_zeroing)
+{
+	if (index_byte_to_start_zeroing < 0 || index_byte_to_start_zeroing >= sha512::message_block_size_bytes)
+	{
+		throw std::invalid_argument("Error in function \"sha512::zero_bytes\"."
+			" \"index_byte_to_start_zeroing\" is out of range.");
+	}
+	const int index_uint64 = index_byte_to_start_zeroing / 8;
+	// One of the elements of message_block is tricky because part of it is already used
+	// so we only need to clear the end of it in big endian byte order, meaning there's
+	// one bit where zeroing the memory is not good and therefore we need to use
+	// bit manipulation to zero only the least significant part of the uint64_t.
+	// I'll call that element in message_block: "junction_uint64"
+	{
+		auto clear_n_least_significant_bits = [](const std::uint64_t& num, const int num_bits_to_clear) -> std::uint64_t
+		{
+			// Don't bit shift by 64 bits or more, that would be undefined behavior in C++
+			if (num_bits_to_clear > 64)
+				return 0;
+			else
+				return static_cast<std::uint64_t>(num >> num_bits_to_clear) << num_bits_to_clear;
+		};
+		const int num_bytes_used_in_junction_uint64 = index_byte_to_start_zeroing % 8;
+		const int num_bits_unused_in_junction_uint64 = 64 - (num_bytes_used_in_junction_uint64 * 8);
+		messsage_block[index_uint64] = clear_n_least_significant_bits(messsage_block[index_uint64], num_bits_unused_in_junction_uint64);
+	}
+	std::fill(messsage_block.begin() + index_uint64 + 1, messsage_block.end(), 0);
+}
+
+// Creates a copy of "this->m_hash_values" and of "this->m_message_block"
+// before computing the digest because there are some final steps that are
+// required to get the digest and this function is not allowed to affect
+// the internal state of the sha512 class. Therefore the changes that
+// need to be made to the message_block and to the hash_values are done
+// on the copies of those variables.
 sha512::digest_t sha512::digest() const
 {
+	std::array<std::uint64_t, 8> final_hash = this->m_hash_values;
+	{
+		sha512::message_block_t message_block = this->m_message_block;
+		int num_bytes_filled = this->m_num_bytes_filled;
+		if (num_bytes_filled < 0 || num_bytes_filled > sha512::message_block_size_bytes)
+		{
+			throw std::logic_error("Error in function \"sha512::digest\"."
+				" \"this->m_num_bytes_filled\" contains a value out of range.");
+		}
+		const bool is_completely_full = num_bytes_filled == sha512::message_block_size_bytes;
+		if (!is_completely_full)
+		{
+			// Zero the unfilled bytes
+			sha512::zero_bytes(message_block, num_bytes_filled);
+		}
+		// Advance to next block if terminating 1 bit doesn't fit
+		else
+		{
+			sha512::compress(message_block, final_hash);
+			num_bytes_filled = 0;
+			std::fill(message_block.begin(), message_block.end(), 0);
+		}
+		// Set the 1 terminating bit.
+		// Only one of the following bytes in a uint64_t
+		// will be able to contain the 1 terminating byte:
+		// 1000000010000000100000001000000010000000100000001000000010000000
+		// The convention we're using for SHA512 revolves around 8-bit bytes, not bits.
+		{
+			const int index_byte_of_1_bit = num_bytes_filled + 1;
+			const int index_uint64_of_1_bit = index_byte_of_1_bit / 8;
+			// Where index 0 is the most significant
+			// in big-endian style.
+			const int index_byte_in_uint64 = index_byte_of_1_bit % 8;
+			message_block[index_uint64_of_1_bit] |= (static_cast<std::uint64_t>(1) << (63 - (index_byte_in_uint64 * 8)));
+			++num_bytes_filled;
+		}
+		const int unused_len_bytes = sha512::message_block_size_bytes - num_bytes_filled;
+		// The 128 bits of length that are inputted at the end of the last message block
+		// as per the SHA512 algorithm. In big endian.
+		{
+			// Advance to next block if length doesn't fit
+			{
+				const bool length_fits = unused_len_bytes >= 128 / 8;
+				if (!length_fits)
+				{
+					sha512::compress(message_block, final_hash);
+					std::fill(message_block.begin(), message_block.end(), 0);
+					num_bytes_filled = 0;
+				}
+			}
+			// Extract the less significant half
+			message_block[message_block.size() - 1] = static_cast<std::uint64_t>(this->m_bits_counter);
+			// Extract the more significant half, big endian style.
+			message_block[message_block.size() - 2] = static_cast<std::uint64_t>(this->m_bits_counter >> 64);
+		}
+		// Now that the length and the 1 terminating bit are both in message_block
+		// let's finally calculate the final hash
+		sha512::compress(message_block, final_hash);
+	}
 
-
-	// Finally, now that we have the hash values inside of
-	// "current_hash_values" as 64 bits big endian.
+	// Finally, now we have the hash values inside of
+	// "final_hash" as 64 bits big endian.
 	// It's big endian because we originally loaded the
 	// bytes into the message blocks as big endian.
-	// we'll convert the hash to bytes to avoid
+	// We'll convert the hash to bytes to avoid
 	// confusion over endianness.
 
-	sha512::digest_t final_hash;
-
-	for (int index = 0; index < static_cast<int>(current_hash_values.size()); ++index)
+	sha512::digest_t hash_user_friendly;
+	for (int index = 0; index < static_cast<int>(final_hash.size()); ++index)
 	{
-		boost::endian::store_big_u64(final_hash.data() + index * 8, current_hash_values[index]);
+		boost::endian::store_big_u64(hash_user_friendly.data() + index * 8, final_hash[index]);
 	}
-	return final_hash;
+	return hash_user_friendly;
 }
 
 // Loading the bytes into the std::uint64 as big endian because
 // that's the convention when dealing with SHA512
  void sha512::copy_arr_bytes_into_arr_64_bits(const std::uint8_t* const bytes, const std::size_t num_bytes, std::uint64_t* const arr64, const int num_bytes_already_taken)
 {
-	auto& load_big_or_little = boost::endian::load_big_u64;
+	const bool bytes_taken_valid_range = num_bytes_already_taken >= 0 && num_bytes_already_taken < 8;
+	if (!bytes_taken_valid_range)
+	{
+		throw std::invalid_argument("Error in function \"sha512::copy_arr_bytes_into_arr_64_bits\"."
+			" num_bytes_already_taken is out of range [0, 8)");
+	}
+	if (num_bytes <= 0)
+	{
+		throw std::invalid_argument("Error in function \"sha512::copy_arr_bytes_into_arr_64_bits\"."
+			" num_bytes can\'t be zero.");
+	}
+	if (bytes == nullptr || arr64 == nullptr)
+	{
+		throw std::invalid_argument("Error in function \"sha512::copy_arr_bytes_into_arr_64_bits\"."
+			" neither \"bytes\" nor \"arr64\" are allowed to be nullptr.");
+	}
+
+	// The copying is very simple. Use boost::endian::load_big_u64 each time to copy
+	// 8 bytes at a time into the "arr64".
+	//
+	// The issue we encounter is that the first and the last index of the arr64 array
+	// may contain data that we're not allowed to overwrite.
+	// The parameter: "num_bytes_already_taken" is responsible for determining that.
+	// 
+	// Therefore, for efficiency we'll still use boost::endian::load_big_u64 and only for
+	// the beginning and end indexes in the relevant range inside of "arr64" we'll
+	// implement specialized bitwise operations that don't override the existing data.
+	//
+
+	// Check the first index
+	{
+
+	}
+
 	if (num_bytes > 0)
 	{
-		std::array<std::uint8_t, 8> emergency_buffer;
+		std::array<std::uint8_t, 8> emergency_buffer{ {0} };
 		std::size_t index_byte = 0;
 		std::size_t index_arr = 0;
 		for (; ; index_byte += 8, ++index_arr)
@@ -117,13 +254,13 @@ sha512::digest_t sha512::digest() const
 			const std::size_t bytes_remaining = num_bytes - index_byte;
 			if (bytes_remaining >= 8)
 			{
-				arr64[index_arr] = load_big_or_little(&bytes[index_byte]);
+				arr64[index_arr] = boost::endian::load_big_u64(&bytes[index_byte]);
 			}
 			if (bytes_remaining < 8)
 			{
 				std::fill(emergency_buffer.begin(), emergency_buffer.end(), 0);
 				std::copy_n(&bytes[index_byte], bytes_remaining, emergency_buffer.begin());
-				arr64[index_arr] = load_big_or_little(emergency_buffer.data());
+				arr64[index_arr] = boost::endian::load_big_u64(emergency_buffer.data());
 			}
 			if (bytes_remaining <= 8)
 			{
@@ -132,11 +269,11 @@ sha512::digest_t sha512::digest() const
 		}
 	}
 }
- void sha512::compress()
+ void sha512::compress(const message_block_t& message_block, std::array<std::uint64_t, 8>& hash_values)
  {
-	 std::array<std::uint64_t, 80> message_schedule;
+	 std::array<std::uint64_t, 80> message_schedule{ {0} };
 
-	 std::copy(this->m_message_block.begin(), this->m_message_block.end(), message_schedule.begin());
+	 std::copy(message_block.begin(), message_block.end(), message_schedule.begin());
 	 for (int word_index = 16; word_index < 80; ++word_index)
 	 {
 		 message_schedule[word_index] =
@@ -164,14 +301,14 @@ sha512::digest_t sha512::digest() const
 		 0x113f9804bef90daeULL, 0x1b710b35131c471bULL, 0x28db77f523047d84ULL, 0x32caab7b40c72493ULL, 0x3c9ebe0a15c9bebcULL,
 		 0x431d67c49c100d4cULL, 0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL, 0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL
 	 };
-	 std::uint64_t a = this->m_hash_values[0];
-	 std::uint64_t b = this->m_hash_values[1];
-	 std::uint64_t c = this->m_hash_values[2];
-	 std::uint64_t d = this->m_hash_values[3];
-	 std::uint64_t e = this->m_hash_values[4];
-	 std::uint64_t f = this->m_hash_values[5];
-	 std::uint64_t g = this->m_hash_values[6];
-	 std::uint64_t h = this->m_hash_values[7];
+	 std::uint64_t a = hash_values[0];
+	 std::uint64_t b = hash_values[1];
+	 std::uint64_t c = hash_values[2];
+	 std::uint64_t d = hash_values[3];
+	 std::uint64_t e = hash_values[4];
+	 std::uint64_t f = hash_values[5];
+	 std::uint64_t g = hash_values[6];
+	 std::uint64_t h = hash_values[7];
 	 for (int word_index = 0; word_index < 80; ++word_index)
 	 {
 		 const std::uint64_t T1 = sha512::uppercase_sigma1(e) + sha512::choice(e, f, g) + h + constants[word_index] + message_schedule[word_index];
@@ -185,12 +322,12 @@ sha512::digest_t sha512::digest() const
 		 b = a;
 		 a = T1 + T2;
 	 }
-	 this->m_hash_values[0] += a;
-	 this->m_hash_values[1] += b;
-	 this->m_hash_values[2] += c;
-	 this->m_hash_values[3] += d;
-	 this->m_hash_values[4] += e;
-	 this->m_hash_values[5] += f;
-	 this->m_hash_values[6] += g;
-	 this->m_hash_values[7] += h;
+	 hash_values[0] += a;
+	 hash_values[1] += b;
+	 hash_values[2] += c;
+	 hash_values[3] += d;
+	 hash_values[4] += e;
+	 hash_values[5] += f;
+	 hash_values[6] += g;
+	 hash_values[7] += h;
  }

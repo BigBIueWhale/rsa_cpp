@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <array>
+#include <boost/multiprecision/cpp_int.hpp>
 
 class sha512
 {
@@ -22,20 +23,22 @@ class sha512
 	0x6a09e667f3bcc908ULL, 0xbb67ae8584caa73bULL, 0x3c6ef372fe94f82bULL, 0xa54ff53a5f1d36f1ULL,
 	0x510e527fade682d1ULL, 0x9b05688c2b3e6c1fULL, 0x1f83d9abfb41bd6bULL, 0x5be0cd19137e2179ULL } };
 
+	using message_block_t = std::array<std::uint64_t, message_block_size_bits / 64>;
+
 	// The partial message block that hasn't yet been accounted for in
 	// the summation m_hash_values.
 	// The assumption is that m_message_block will be "emptied" when full
 	// The variable "m_num_bytes_filled" keeps track of how full m_message_block is.
-	std::array<std::uint64_t, message_block_size_bits / 64> m_message_block;
-
-	// 1024 bits fills the entire 16 * 64bit message block
-	static constexpr int completely_full_message_block = 1024;
+	message_block_t m_message_block{ {0} };
 
 	// The message block contains 64-bit integers but we're measuring the fullness level in
 	// bytes. The message block is filled in big endian order inside of each 64-bit integer.
 	// Meaning if "m_num_bytes_filled" then the 3 most significant bytes are set
 	// in the first element of "current_message_block".
 	int m_num_bytes_filled = 0;
+
+	// Entire message length in bits counter
+	boost::multiprecision::uint128_t m_bits_counter{ 0 };
 
 public:
 	sha512() = default;
@@ -126,8 +129,8 @@ private:
 		// The first used byte is the most significant one, in big-endian style.
 		const int num_bytes_already_taken);
 
-	// Consumes m_message_block and alters m_hash_values accordingly.
-	// Assumes that m_num_bytes_filled == completely_full_message_block
-	// Sets m_num_bytes_filled to 0
-	void compress();
+	static void compress(const message_block_t& message_block, std::array<std::uint64_t, 8>& hash_values);
+
+	// Index of byte in array of uint64_t based on big-endian byte order.
+	static void zero_bytes(message_block_t& messsage_block, int index_byte_to_start_zeroing);
 };
