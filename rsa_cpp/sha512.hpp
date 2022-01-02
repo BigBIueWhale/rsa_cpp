@@ -37,7 +37,7 @@ namespace cryptb
 
 		// The message block contains 64-bit integers but we're measuring the fullness level in
 		// bytes. The message block is filled in big endian order inside of each 64-bit integer.
-		// Meaning if "m_num_bytes_filled" then the 3 most significant bytes are set
+		// Meaning if "m_num_bytes_filled" is set to 3 then the 3 most significant bytes are set
 		// in the first element of "current_message_block".
 		int m_num_bytes_filled = 0;
 

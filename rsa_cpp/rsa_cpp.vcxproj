@@ -151,10 +151,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="gen_random.cpp" />
     <ClCompile Include="rsa.cpp" />
     <ClCompile Include="sha512.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="gen_random.hpp" />
     <ClInclude Include="rsa.hpp" />
     <ClInclude Include="sha512.hpp" />
   </ItemGroup>

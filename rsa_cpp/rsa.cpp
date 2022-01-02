@@ -3,6 +3,9 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <sstream>
+#include "gen_random.hpp"
+#include <boost/multiprecision/cpp_bin_float.hpp>
 
 int main()
 {
@@ -19,5 +22,6 @@ int main()
 		num_as_str << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(byte_elem);
 		std::cout << num_as_str.str() << " ";
 	}
+	std::cout << std::endl;
 	return 0;
 }

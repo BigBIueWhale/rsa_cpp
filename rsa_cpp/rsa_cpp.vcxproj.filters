@@ -21,12 +21,18 @@
     <ClCompile Include="rsa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gen_random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="sha512.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="rsa.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gen_random.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
