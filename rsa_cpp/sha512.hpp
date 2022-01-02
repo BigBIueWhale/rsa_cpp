@@ -118,16 +118,17 @@ private:
 	//
 	// All of the bytes in the 64-bit integer array that aren't direct
 	// targets to be overridden, are unaffected by this function's operation.
-	static void copy_arr_bytes_into_arr_64_bits(
+	static void copy_arr_bytes_into_message_block(
 		// Source array of bytes
 		const std::uint8_t* const bytes,
 		// Length of "bytes" array
-		const std::size_t num_bytes,
-		// Destination 64 bit array
-		std::uint64_t* const arr64,
-		// How many bytes are already used inside of the first element of arr64?
-		// The first used byte is the most significant one, in big-endian style.
-		const int num_bytes_already_taken);
+		const int num_bytes,
+		// Destination
+		message_block_t& messsage_block,
+		// How many bytes are already used inside of the entire message block
+		// The first used byte is the most significant one byte of the first
+		// element in the array, in big-endian style.
+		const int num_bytes_already_used_in_message_block);
 
 	static void compress(const message_block_t& message_block, std::array<std::uint64_t, 8>& hash_values);
 
