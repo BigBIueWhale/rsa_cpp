@@ -9,7 +9,7 @@
 // SHA512, the largest message that SHA512 supports is of size 2^128-1 bits
 // which I assume to never receive as part of this function.
 
-void sha512::update(const std::uint8_t* const data, const std::size_t len)
+void cryptb::sha512::update(const std::uint8_t* const data, const std::size_t len)
 {
 	if (data == nullptr)
 	{
@@ -48,7 +48,7 @@ void sha512::update(const std::uint8_t* const data, const std::size_t len)
 	this->m_bits_counter += static_cast<decltype(this->m_bits_counter)>(len) << 3;
 }
 
-void sha512::zero_bytes(message_block_t& messsage_block, int index_byte_to_start_zeroing)
+void cryptb::sha512::zero_bytes(message_block_t& messsage_block, int index_byte_to_start_zeroing)
 {
 	if (index_byte_to_start_zeroing < 0 || index_byte_to_start_zeroing >= sha512::message_block_size_bytes)
 	{
@@ -83,7 +83,7 @@ void sha512::zero_bytes(message_block_t& messsage_block, int index_byte_to_start
 // the internal state of the sha512 class. Therefore the changes that
 // need to be made to the message_block and to the hash_values are done
 // on the copies of those variables.
-sha512::digest_t sha512::digest() const
+cryptb::sha512::digest_t cryptb::sha512::digest() const
 {
 	std::array<std::uint64_t, 8> final_hash = this->m_hash_values;
 	{
@@ -173,7 +173,7 @@ sha512::digest_t sha512::digest() const
 // Then message_block will become:
 //		 message_block = { 1, 2, 3, 4, 5, 6, 7, 0x0102ffffffffffff, 99, 99, 99, 99, 99, 99, 99, 99 },
 //
-void sha512::copy_arr_bytes_into_message_block(const std::uint8_t* const bytes, const int num_bytes, message_block_t& messsage_block, const int num_bytes_already_used_in_message_block)
+void cryptb::sha512::copy_arr_bytes_into_message_block(const std::uint8_t* const bytes, const int num_bytes, message_block_t& messsage_block, const int num_bytes_already_used_in_message_block)
 {
 	const bool bytes_taken_valid_range = num_bytes_already_used_in_message_block >= 0 && num_bytes_already_used_in_message_block < sha512::message_block_size_bytes;
 	if (!bytes_taken_valid_range)
@@ -280,7 +280,7 @@ void sha512::copy_arr_bytes_into_message_block(const std::uint8_t* const bytes, 
 		}
 	}
 }
-void sha512::compress(const message_block_t & message_block, std::array<std::uint64_t, 8>&hash_values)
+void cryptb::sha512::compress(const message_block_t & message_block, std::array<std::uint64_t, 8>&hash_values)
 {
 	std::array<std::uint64_t, 80> message_schedule{ {0} };
 

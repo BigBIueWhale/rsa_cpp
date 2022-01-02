@@ -26,5 +26,8 @@
     <ClInclude Include="sha512.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="rsa.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

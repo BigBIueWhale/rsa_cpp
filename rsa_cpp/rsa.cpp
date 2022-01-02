@@ -7,9 +7,9 @@
 int main()
 {
 	constexpr const std::uint8_t message[] = "Hello World!";
-	sha512::digest_t hash_bytes;
+	cryptb::sha512::digest_t hash_bytes;
 	{
-		sha512 hash;
+		cryptb::sha512 hash;
 		hash.update(message, sizeof(message) - 1);
 		hash_bytes = hash.digest();
 	}
