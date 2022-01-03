@@ -31,6 +31,10 @@ namespace cryptb
 		sha512 m_state;
 		static constexpr int sz = sizeof(m_state);
 	public:
+		random_engine(const random_engine&) = default;
+		random_engine(random_engine&&) = default;
+		random_engine& operator=(const random_engine&) = default;
+		random_engine& operator=(random_engine&&) = default;
 		// Supports using a specific size (optimal size) std::array as a seed
 		random_engine(const std::array<std::uint8_t, optimal_seed_size_bytes>& seed_bytes) :
 			m_state(seed_bytes.data(), seed_bytes.size()) {}

@@ -21,7 +21,10 @@
     <ClCompile Include="rsa.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gen_random.cpp">
+    <ClCompile Include="random_engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="prime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,7 +35,10 @@
     <ClInclude Include="rsa.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="gen_random.hpp">
+    <ClInclude Include="random_engine.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="prime.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

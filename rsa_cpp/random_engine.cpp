@@ -1,4 +1,4 @@
-#include "gen_random.hpp"
+#include "random_engine.hpp"
 #include "sha512.hpp"
 #include <stdexcept>
 #include <algorithm>

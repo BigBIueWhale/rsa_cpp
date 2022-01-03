@@ -1,27 +1,20 @@
-#include "sha512.hpp"
+#include "rsa.hpp"
+#include "prime.hpp"
 
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-#include <sstream>
-#include "gen_random.hpp"
-#include <boost/multiprecision/cpp_bin_float.hpp>
-
-int main()
+cryptb::rsa::rsa(random_engine& rand, const int num_bytes_in_prime_number = 2048)
 {
-	constexpr const std::uint8_t message[] = "Hello World!";
-	cryptb::sha512::digest_t hash_bytes;
+	auto crypto_rand = [&rand, &num_bytes_in_prime_number]() -> boost::multiprecision::cpp_int
 	{
-		cryptb::sha512 hash;
-		hash.update(message, sizeof(message) - 1);
-		hash_bytes = hash.digest();
-	}
-	for (const std::uint8_t& byte_elem : hash_bytes)
+		return cryptb::prime::gen_random(num_bytes_in_prime_number, rand);
+	};
+	const boost::multiprecision::cpp_int p = crypto_rand();
+	boost::multiprecision::cpp_int q = 0;
+	// Not sure this do-while loop is required because it's super unlikely to be needed.
+	do
 	{
-		std::ostringstream num_as_str;
-		num_as_str << std::setw(2) << std::setfill('0') << std::hex << static_cast<int>(byte_elem);
-		std::cout << num_as_str.str() << " ";
-	}
-	std::cout << std::endl;
-	return 0;
+		q = crypto_rand();
+	} while (p != q);
+	const boost::multiprecision::cpp_int PhiN = (p - 1) * (q - 1);
+
+	// ... Rest of algorithm WIP
 }
