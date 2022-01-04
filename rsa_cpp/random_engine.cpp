@@ -39,6 +39,12 @@ boost::multiprecision::cpp_int cryptb::random_engine::operator()(int num_bytes)
 		rand_num_as_bytes.insert(rand_num_as_bytes.cend(), rand_num.cbegin(), rand_num.cbegin() + num_bytes_to_push);
 	}
 	boost::multiprecision::cpp_int integer_from_bytes;
-	boost::multiprecision::import_bits(integer_from_bytes, rand_num_as_bytes.begin(), rand_num_as_bytes.end(), 8);
+	// The "msv_first == true" means that if rand_num_as_bytes
+	// is: { 0x0f, 0xf0, 0x12, 0x30 }
+	// then it'll turn into: 0xff01230
+	// The alternative ("msv_first == true") would make the
+	// outputted boost::multiprecision::cpp_int be: 0x3012f00f
+	// But it doesn't matter that much. As long as it's random.
+	boost::multiprecision::import_bits(integer_from_bytes, rand_num_as_bytes.begin(), rand_num_as_bytes.end(), 8, true);
 	return integer_from_bytes;
 }

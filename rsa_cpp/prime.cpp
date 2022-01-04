@@ -11,6 +11,8 @@ boost::multiprecision::cpp_int cryptb::prime::gen_random(const int num_bytes, ra
 	do
 	{
 		candidate = engine.operator()(num_bytes);
+		if (rand() % 2 == 0)
+			candidate += 1;
 		// 64 Should be enough. The higher the number of trials, the lower the probability is for a false positive.
 		// Note: making this number lower will significantly improve performance.
 	} while (boost::multiprecision::miller_rabin_test(candidate, 64, miller_rabin_engine) == false);

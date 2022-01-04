@@ -1,5 +1,7 @@
 #include "rsa.hpp"
 #include "prime.hpp"
+#include <vector>
+#include <cstddef>
 
 cryptb::rsa::rsa(random_engine& rand, const int num_bytes_in_prime_number)
 {
@@ -15,7 +17,7 @@ cryptb::rsa::rsa(random_engine& rand, const int num_bytes_in_prime_number)
 		do
 		{
 			q = crypto_rand();
-		} while (p != q);
+		} while (p == q);
 		PhiN = (p - 1) * (q - 1);
 		// N is just the multiple of the two generated secret primes.
 		// Even though N is public, nobody can feasibly find the prime
@@ -56,5 +58,61 @@ boost::multiprecision::cpp_int cryptb::rsa::findd(const boost::multiprecision::c
 	// We'll use the extended Euclidean algorithm which computes
 	// exactly what we want.
 	//
-	
+	struct euclid_step
+	{
+		boost::multiprecision::cpp_int a = 0;
+		boost::multiprecision::cpp_int b = 0;
+		boost::multiprecision::cpp_int quotient = 0;
+		boost::multiprecision::cpp_int remainder = 0;
+	};
+	std::vector<euclid_step> steps_of_euclid;
+	boost::multiprecision::cpp_int a = PhiN;
+	boost::multiprecision::cpp_int b = e;
+	boost::multiprecision::cpp_int d = 0;
+	while (true)
+	{
+		boost::multiprecision::cpp_int remainder = a % b;
+		if (remainder == 0)
+			break;
+		euclid_step current_step;
+		// Basically, it's just by order of a pen and pencil calculation from left to right
+		current_step.a = a;
+		current_step.b = b;
+		current_step.quotient = a / b;
+		current_step.remainder = remainder;
+		steps_of_euclid.push_back(current_step);
+		a = b;
+		b = remainder;
+	}
+	if (steps_of_euclid.size() > 0)
+	{
+		std::size_t step = steps_of_euclid.size() - 1;
+
+		// Pairs of numbers and their multiples
+		std::pair<boost::multiprecision::cpp_int, boost::multiprecision::cpp_int> valueA{ steps_of_euclid[step].a, 1 };
+		std::pair<boost::multiprecision::cpp_int, boost::multiprecision::cpp_int> valueB{ steps_of_euclid[step].b, -(steps_of_euclid[step].quotient) };
+		bool BSmaller = true;
+
+		while (step > 0)
+		{
+			--step;
+			if (BSmaller)
+			{
+				BSmaller = false;
+				valueA.second = valueA.second + (valueB.second) * (-steps_of_euclid[step].quotient);
+				valueB.first = steps_of_euclid[step].a;
+			}
+			else
+			{
+				BSmaller = true;
+				valueB.second = valueB.second + valueA.second * (-steps_of_euclid[step].quotient);
+				valueA.first = steps_of_euclid[step].a;
+			}
+			if (valueA.first > valueB.first)
+				d = valueB.second % PhiN;
+			else
+				d = valueA.second % PhiN;
+		}
+	}
+	return d;
 }

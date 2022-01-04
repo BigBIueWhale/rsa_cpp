@@ -63,7 +63,15 @@ namespace cryptb
 				}
 			};
 			back_inserter_t_for_sha512 dummy_back_inserter{ this->m_state };
-			boost::multiprecision::export_bits(seed, std::back_inserter(dummy_back_inserter), 8);
+			// The "msv_first == true" means that if the received number is 0xff01230
+			// then it'll be layed-out in the byte array as:
+			// { 0x0f, 0xf0, 0x12, 0x30 }
+			// 
+			// The alternative ("msv_first == false") would make the byte array look like:
+			// { 0x30, 0x12, 0xf0, 0x0f }
+			//
+			// But it doesn't matter that much. As long as it's random.
+			boost::multiprecision::export_bits(seed, std::back_inserter(dummy_back_inserter), 8, true);
 		}
 
 		// iter_T could be for example:
