@@ -9,16 +9,21 @@ namespace cryptb
 	{
 		// Private key- for decrypting / digital signing
 		// DON'T SHARE d WITH THE CLIENT!
+		// Tends to be a number with around 2048 bits.
 		boost::multiprecision::cpp_int d{ 0 };
 
 		// It's completely safe to share e and N with the entire world.
 		// In fact, you should.
 
 		// Public key- for encrypting / verifying digital signature
+		// Tends to be a very small number. Choosing the number 3 for example, is common.
 		boost::multiprecision::cpp_int e{ 0 };
 
 		// Public key- for everything. N is needed for all operations.
+		// Tends to be a number with about 4096 bits.
 		boost::multiprecision::cpp_int N{ 0 };
+
+		static boost::multiprecision::cpp_int findd(const boost::multiprecision::cpp_int& PhiN, const boost::multiprecision::cpp_int& e);
 
 	public:
 		rsa(const rsa&) = default;
