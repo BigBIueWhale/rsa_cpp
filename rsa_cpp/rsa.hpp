@@ -33,9 +33,10 @@ namespace cryptb
 
 		// Constructor for generating RSA public-private key pair using the given random engine.
 		//
-		// When "num_bytes_in_prime_number" == 2048 that's 4096-bit RSA
+		// When "num_bytes_in_prime_number" == 128 that's 2048-bit RSA
+		// Should take a second and a half (very expensive function, call on an asynchronous thread).
 		//
-		rsa(random_engine& rand, const int num_bytes_in_prime_number = 2048);
+		rsa(random_engine& rand, const int num_bytes_in_prime_number = 128);
 
 		// Constructor for loading RSA public-private key pairs from values
 		rsa(boost::multiprecision::cpp_int&& e, boost::multiprecision::cpp_int&& d, boost::multiprecision::cpp_int&& N) :
