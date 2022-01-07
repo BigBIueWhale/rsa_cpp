@@ -7,7 +7,8 @@
 boost::multiprecision::cpp_int cryptb::prime::gen_random(const int num_bytes, random_engine& engine)
 {
 	boost::multiprecision::cpp_int candidate;
-	std::mt19937_64 miller_rabin_engine(static_cast<std::mt19937_64::result_type>(engine.operator()(sizeof(std::mt19937_64::result_type))));
+	const auto seed = engine.operator()(sizeof(std::mt19937_64::result_type));
+	std::mt19937_64 miller_rabin_engine(static_cast<std::mt19937_64::result_type>(seed));
 	do
 	{
 		candidate = engine.operator()(num_bytes);

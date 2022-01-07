@@ -2,6 +2,12 @@
 #include "sha512.hpp"
 #include <stdexcept>
 #include <algorithm>
+#include <type_traits>
+#include <cstring>
+
+// For true random number generation (gen_truly_random_bytes)
+#include <random>
+#include <chrono>
 
 std::array<std::uint8_t, 64> cryptb::random_engine::gen_512_bit_random_number()
 {
@@ -47,4 +53,48 @@ boost::multiprecision::cpp_int cryptb::random_engine::operator()(int num_bytes)
 	// But it doesn't matter that much. As long as it's random.
 	boost::multiprecision::import_bits(integer_from_bytes, rand_num_as_bytes.begin(), rand_num_as_bytes.end(), 8, true);
 	return integer_from_bytes;
+}
+static constexpr int ceil_division(const int dividend, const int divisor)
+{
+	//static_assert(dividend >= 0 && divisor > 0, "Will cause unexpected result")
+	const int result = dividend / divisor;
+	const int backwards = divisor * result;
+	if (backwards < result)
+		return result + 1;
+	else
+		return result;
+}
+std::array<std::uint8_t, cryptb::random_engine::optimal_seed_size_bytes> cryptb::random_engine::gen_truly_random_bytes()
+{
+	std::random_device hopefully_random;
+	constexpr int num_bytes_in_each_random_number = sizeof(std::random_device::result_type);
+
+	static_assert(random_engine::optimal_seed_size_bytes > 0, "Somebody broke cryptb library\'s constants.");
+	static_assert(num_bytes_in_each_random_number > 0, "Somebody broke the standard library\'s constants.");
+	static_assert(std::numeric_limits<std::random_device::result_type>::min() == std::random_device::min()
+		&& std::numeric_limits<std::random_device::result_type>::max() == std::random_device::max(),
+		"Assuming that the possible random range returned by std::random_device is the entire returned integer\'s range.");
+
+	constexpr int required_random_numbers = ceil_division(random_engine::optimal_seed_size_bytes, num_bytes_in_each_random_number);
+	std::array<std::random_device::result_type, required_random_numbers> rand_arr = { { 0 } };
+	// Fill the array with truly random numbers
+	for (std::random_device::result_type& elem : rand_arr)
+	{
+		elem = hopefully_random.operator()();
+	}
+	std::array<std::uint8_t, cryptb::random_engine::optimal_seed_size_bytes> result{ {0} };
+	static_assert(std::is_trivially_copyable<decltype(rand_arr)::value_type>::value
+		&& std::is_trivially_copyable<decltype(result)::value_type>::value,
+		"I need this for the memcpy to be safe");
+	std::memcpy(result.data(), rand_arr.data(), result.size());
+	// Use time for extra randomness
+	const std::chrono::high_resolution_clock::time_point t = std::chrono::high_resolution_clock::now();
+	const auto nanoseconds_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(t.time_since_epoch()).count();
+	static_assert(std::is_trivially_copyable<decltype(result)::value_type>::value
+		&& std::is_trivially_copyable<decltype(nanoseconds_since_epoch)>::value,
+		"I need this for the memcpy to be safe");
+	static_assert(sizeof(nanoseconds_since_epoch) < result.size(),
+		"I need this for the memcpy not to cause a stack buffer overflow");
+	std::memcpy(result.data(), &nanoseconds_since_epoch, sizeof(nanoseconds_since_epoch));
+	return result;
 }

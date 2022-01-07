@@ -1,13 +1,12 @@
 #include <iostream>
 #include "rsa.hpp"
-#include <random>
 #include <chrono>
+
 int main()
 {
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-	
-	std::random_device rd;
-	cryptb::random_engine engine(static_cast<boost::multiprecision::uint128_t>(rd.operator()()));
+	// Seed with a truly random numbers (the default constructor does it).
+	cryptb::random_engine engine;
 	cryptb::rsa whatever{ engine };
 	std::cout << "e: " << whatever.get_e() << std::endl << " d: " << whatever.get_d() << std::endl << " N: " << whatever.get_N() << std::endl;
 	
