@@ -12,6 +12,10 @@
 
 namespace cryptb
 {
+	// Give the constructor nothing to automatically initizlize with a truly
+	// random state.
+	// Give the constructor a seed to (instead) initialize the state deterministrically
+	// based on the seed.
 	class random_engine
 	{
 		sha512 m_state;
