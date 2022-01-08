@@ -13,7 +13,8 @@ Since this is vanilla RSA with no fancy padding etc. there are only two ways to 
 * Choose a random number in the range \[0, N) and encrypt it using cryptb::rsa::encrypt.
 * Take the SHA512 hash of some unique binary information (such as a PDF file) and convert that into a number, and then sign it using cryptb::rsa::sign
 \
-Don't
+\
+**Don't**
 * Try to encrypt the same large random number more than once (Chinese remainder theorem attack).
 * Use RSA for anything but key exchange and digital signatures.
 # rsa_cpp
