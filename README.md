@@ -10,8 +10,9 @@ This library aspires to keep only the bare minimum for a fully functioning secur
 In the future we will support symmetric encryption and older versions of C++.
 # Pitfalls
 Since this is vanilla RSA with no fancy padding etc. there are only two ways to use this library securely.
-* Choose a random number in the range \[0, N) and encrypt it using cryptb::rsa::encrypt.\
+* Choose a random number in the range \[0, N) and encrypt it using cryptb::rsa::encrypt.
 * Take the SHA512 hash of some unique binary information (such as a PDF file) and convert that into a number, and then sign it using cryptb::rsa::sign
+\
 Don't
 * Try to encrypt the same large random number more than once (Chinese remainder theorem attack).
 * Use RSA for anything but key exchange and digital signatures.
