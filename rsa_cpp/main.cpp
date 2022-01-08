@@ -1,17 +1,18 @@
-#include <iostream>
 #include "rsa.hpp"
+#include <iostream>
 #include <chrono>
 
 int main()
 {
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
-	// Seed with a truly random numbers (the default constructor does it).
-	cryptb::random_engine engine;
-	for (int i = 0; i < 10000; ++i)
 	{
-		cryptb::rsa whatever{ engine, 2 };
-		if (i % 1000 == 0)
+		// Seed with a truly random numbers (the default constructor does it).
+		cryptb::random_engine engine;
+		for (int i = 0; i < 2; ++i)
 		{
+			// Default is RSA with 128 bytes in prime number
+			// which is 2048 bit rsa.
+			cryptb::rsa whatever{ engine };
 			std::cout << "e: " << whatever.get_e() << std::endl << " d: " << whatever.get_d() << std::endl << " N: " << whatever.get_N() << std::endl;
 		}
 	}
