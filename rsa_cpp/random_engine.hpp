@@ -12,8 +12,14 @@
 
 namespace cryptb
 {
+	// Give the constructor nothing to automatically initizlize with a truly
+	// random state.
+	// Give the constructor a seed to (instead) initialize the state deterministrically
+	// based on the seed.
 	class random_engine
 	{
+		sha512 m_state;
+	public:
 		// m_state has the following values:
 		//
 		// m_hash_values: 64 bytes == 2 ^ 512 valid combinations
@@ -27,16 +33,15 @@ namespace cryptb
 		// 1671 bits. A close enough number is 208 bytes.
 		//
 		static constexpr int optimal_seed_size_bytes = 208;
-
-		sha512 m_state;
-		static constexpr int sz = sizeof(m_state);
-	public:
+		// Generates a truly random number
+		random_engine()
+			: random_engine(random_engine::gen_truly_random_bytes()) {}
 		random_engine(const random_engine&) = default;
 		random_engine(random_engine&&) = default;
 		random_engine& operator=(const random_engine&) = default;
 		random_engine& operator=(random_engine&&) = default;
 		// Supports using a specific size (optimal size) std::array as a seed
-		random_engine(const std::array<std::uint8_t, optimal_seed_size_bytes>& seed_bytes) :
+		random_engine(const std::array<std::uint8_t, random_engine::optimal_seed_size_bytes>& seed_bytes) :
 			m_state(seed_bytes.data(), seed_bytes.size()) {}
 
 		// Supports using any boost::multiprecision::cpp_int type as a seed.
@@ -94,6 +99,9 @@ namespace cryptb
 
 		// Get n random number with n number of bytes.
 		boost::multiprecision::cpp_int operator()(int num_bytes);
+		// Pseudo random number
 		std::array<std::uint8_t, 64> gen_512_bit_random_number();
+		// Truly random number
+		std::array<std::uint8_t, random_engine::optimal_seed_size_bytes> gen_truly_random_bytes();
 	};
 }
