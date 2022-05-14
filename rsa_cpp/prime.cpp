@@ -10,6 +10,9 @@ boost::multiprecision::cpp_int cryptb::prime::gen_random(const int num_bytes, ra
 		throw std::invalid_argument("Error in function \"cryptb::prime::gen_random\"."
 			" The argument: \"num_bytes\" <= 0. There is no prime number with that number of bytes.");
 	boost::multiprecision::cpp_int candidate;
+	// TODO: Use seed_seq here to seed the std::mt19937_64 engine better.
+	// Also, don't allocate the std::mt19937_64 engine on the stack because
+	// it's more than 1000 bytes long.
 	const auto seed = engine.operator()(sizeof(std::mt19937_64::result_type));
 	std::mt19937_64 miller_rabin_engine(static_cast<std::mt19937_64::result_type>(seed));
 	do
