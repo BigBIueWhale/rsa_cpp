@@ -15,8 +15,8 @@ Since this is vanilla RSA with no fancy padding etc. there are only two ways to 
 \
 \
 **Don't**
-* Try to encrypt the same large random number more than once (Chinese remainder theorem attack).
 * Use RSA for anything but key exchange and digital signatures.
+* Sign a message directly (always use the hash).
 # rsa_cpp
 Simple RSA Implementation\
 Uses boost::endian and boost::multiprecision::cpp_int and C++20 features.
