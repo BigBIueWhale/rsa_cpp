@@ -17,6 +17,7 @@ Since this is vanilla RSA with no fancy padding etc. there are only two ways to 
 **Don't**
 * Use RSA for anything but key exchange and digital signatures.
 * Sign a message directly (always use the hash).
+* Encrypt a short/unsecure number (with less than 512 bits).
 # rsa_cpp
 Simple RSA Implementation\
 Uses boost::endian and boost::multiprecision::cpp_int and C++20 features.
