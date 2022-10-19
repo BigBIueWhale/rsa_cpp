@@ -20,9 +20,9 @@ cryptb::rsa::rsa(random_engine& rand, const int num_bytes_in_prime_number)
 	boost::multiprecision::cpp_int PhiN = 0;
 	// The probability that this do-while loop will run more
 	// than once is small (not that small).
-	// As long as N != 65537 and also PhiN != 65537
-	// But if that happens, we'll just generate another p and q
-	// until e is coprime with both PhiN and with N.
+	// N must be coprime with 65537 and also PhiN must be coprime with 65537
+	// But if they're not coprime, which is unlikely but does happen,
+	// we'll just generate another p and q until e is coprime with both PhiN and with N.
 	// e also must be smaller than PhiN
 	bool is_e_compatible = false;
 	do
