@@ -7,7 +7,7 @@ int main()
 	const std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 	{
 		// Seed with a truly random numbers (the default constructor does it).
-		cryptb::random_engine engine;
+		cryptb::random_engine engine{};
 		for (int i = 0; i < 2; ++i)
 		{
 			// Default is RSA with 128 bytes in prime number
